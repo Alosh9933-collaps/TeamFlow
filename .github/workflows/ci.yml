@@ -18,6 +18,9 @@ jobs:
     services:
       postgres:
         image: postgres:18
+	credentials:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
         env:
           POSTGRES_DB: teamflow_test
           POSTGRES_USER: teamflow
