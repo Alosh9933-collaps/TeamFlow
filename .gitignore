@@ -1,0 +1,39 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Django
+db.sqlite3
+*.sqlite3
+staticfiles/
+media/
+
+# Node.js / React
+node_modules/
+dist/
+frontend/dist/
+
+# Temporary frontend backup
+frontend/src_old/
+
+# Logs and test coverage
+npm-debug.log*
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
