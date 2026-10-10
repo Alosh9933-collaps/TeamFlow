@@ -46,6 +46,9 @@ export default function LoginPage() {
             <label className="block"><span className="mb-2 block text-sm font-medium text-slate-300">Password</span><input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/10" placeholder="Your password" /></label>
             <button disabled={submitting} className="flex w-full items-center justify-center rounded-xl bg-cyan-300 px-4 py-3.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-60">{submitting ? 'Signing in…' : 'Sign in'}</button>
           </form>
+          <p className="mt-4 text-right text-sm">
+            <Link to="/forgot-password" className="font-semibold text-cyan-300 hover:text-cyan-200">Forgot password?</Link>
+          </p>
           <p className="mt-7 text-center text-sm text-slate-400">New to TeamFlow? <Link to="/register" className="font-semibold text-cyan-300 hover:text-cyan-200">Create an account</Link></p>
           <p className="mt-10 text-center text-xs text-slate-600">Connected to your Django REST API</p>
         </div>

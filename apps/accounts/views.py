@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.conf import settings
 from rest_framework import status, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -285,16 +286,16 @@ class PasswordResetRequestView(APIView):
                 user
             )
 
-            reset_path = reverse(
-                "password-reset-confirm",
-                kwargs={
-                    "uidb64": uidb64,
-                    "token": token,
-                },
-            )
-
-            reset_url = request.build_absolute_uri(
-                reset_path
+            # The email must link to the React page, not the API endpoint.
+            # Set FRONTEND_URL in Django settings for each environment.
+            frontend_url = getattr(
+                settings,
+                "FRONTEND_URL",
+                "http://127.0.0.1:5173",
+            ).rstrip("/")
+            reset_url = (
+                f"{frontend_url}/reset-password/"
+                f"{uidb64}/{token}"
             )
 
             send_password_reset_email(

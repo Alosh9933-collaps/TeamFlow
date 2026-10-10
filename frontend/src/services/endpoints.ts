@@ -6,6 +6,9 @@ export const ENDPOINTS = {
     me: 'auth/me/',
     // Assumed from the RegisterView name in the backend project.
     register: 'auth/register/',
+    passwordResetRequest: 'auth/password-reset/',
+    passwordResetConfirm: (uidb64: string, token: string) =>
+      `auth/password-reset/${encodeURIComponent(uidb64)}/${encodeURIComponent(token)}/`,
   },
   teams: 'teams/',
   projects: 'projects/',
