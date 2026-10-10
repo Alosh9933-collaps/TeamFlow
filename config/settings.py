@@ -158,9 +158,17 @@ if not DEBUG:
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "").strip()
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "").strip()
+EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "console").strip().lower()
+
 MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+    "default": {
+        "BACKEND": (
+            "config.email_backends.SendGridAPIEmailBackend"
+            if EMAIL_PROVIDER == "sendgrid"
+            else "django.core.mail.backends.console.EmailBackend"
+        ),
     },
 }
 
