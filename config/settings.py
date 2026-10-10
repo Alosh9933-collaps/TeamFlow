@@ -99,6 +99,9 @@ DATABASES = {
         "PASSWORD": os.getenv("DB_PASSWORD"),
         "HOST": os.getenv("DB_HOST"),
         "PORT": os.getenv("DB_PORT"),
+        "OPTIONS": {
+        "sslmode": os.getenv("DB_SSLMODE", "prefer"),
+    },
     }
 }
 
@@ -177,3 +180,8 @@ PASSWORD_RESET_TIMEOUT = 3600
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
+
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    "http://127.0.0.1:5173",
+).rstrip("/")
