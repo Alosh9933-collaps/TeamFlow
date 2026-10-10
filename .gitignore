@@ -37,3 +37,6 @@ htmlcov/
 # Operating system
 .DS_Store
 Thumbs.db
+# Temporary local artifacts
+/teamflow-auth-files.zip
+/README_APPLY_PATCH.md
