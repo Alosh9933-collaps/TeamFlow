@@ -54,11 +54,7 @@ class TeamViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(
-        detail=True,
-        methods=["post"],
-        url_path="members",
-    )
+    @members.mapping.post
     def add_member(self, request, pk=None):
 
         team = self.get_object()
