@@ -301,6 +301,11 @@ def change_project_member_role(
             "Project member not found."
         )
 
+    if membership.user_id == actor.id:
+        raise PermissionError(
+            "You cannot change your own project role."
+        )
+
     if membership.role == ProjectMembership.Role.MANAGER:
         raise PermissionError(
             "Project manager role cannot be changed."

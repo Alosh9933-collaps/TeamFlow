@@ -768,6 +768,40 @@ class ProjectMemberManagementTests(TestCase):
             ProjectMembership.Role.VIEWER,
         )
 
+    def test_team_admin_cannot_change_own_project_role(self):
+        TeamMembership.objects.update_or_create(
+            user=self.ali,
+            team=self.project.team,
+            defaults={
+                "role": TeamMembership.Role.ADMIN,
+            },
+        )
+
+        membership, _ = ProjectMembership.objects.update_or_create(
+            user=self.ali,
+            project=self.project,
+            defaults={
+                "role": ProjectMembership.Role.VIEWER,
+            },
+        )
+
+        self.client.force_authenticate(user=self.ali)
+
+        response = self.client.patch(
+            f"/api/projects/{self.project.id}/members/{membership.id}/role/",
+            {"role": "MEMBER"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+        membership.refresh_from_db()
+
+        self.assertEqual(
+            membership.role,
+            ProjectMembership.Role.VIEWER,
+        )
+
     def test_member_cannot_change_project_member_role(self):
 
         ProjectMembership.objects.create(
