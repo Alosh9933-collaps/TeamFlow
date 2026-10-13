@@ -52,13 +52,13 @@ The frontend and backend are deployed on Render, with PostgreSQL hosted on Neon.
 
 ![TeamFlow Dashboard](docs/screenshots/dashboard.png)
 
-### Team Members and Roles
+### Teams and Team Members
 
-![Team Members and Roles](docs/screenshots/team-members.png)
+![Teams and Team Members](docs/screenshots/teams.png)
 
-### Project Details and Tasks
+### Projects and Tasks
 
-![Project Details and Tasks](docs/screenshots/project-tasks.png)
+![Projects and Tasks](docs/screenshots/projects.png)
 
 
 ## Technology Stack
