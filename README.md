@@ -1,54 +1,109 @@
 # TeamFlow
 
-TeamFlow is a full-stack team and project management application. It combines a Django REST Framework API with a React + TypeScript frontend, PostgreSQL persistence, JWT authentication, role-based permissions, activity tracking, and notifications.
+[![CI](https://github.com/Alosh9933-collaps/TeamFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/Alosh9933-collaps/TeamFlow/actions/workflows/ci.yml)
+
+**TeamFlow** is a full-stack team and project management application built with Django REST Framework, React, TypeScript, and PostgreSQL. It provides JWT authentication, role-based access control, team and project membership management, task tracking, activity logs, and notifications.
+
+## Live Application
+
+- **Frontend:** https://teamflow-frontend-3kgv.onrender.com/
+- **Backend:** https://teamflow-api-alosh9933.onrender.com/
+- **Repository:** https://github.com/Alosh9933-collaps/TeamFlow
+
+The frontend and backend are deployed on Render, with PostgreSQL hosted on Neon.
 
 ## Features
 
-- User registration and JWT-based authentication
-- Team creation and team membership management
-- Project creation and project join-request workflows
-- Task management with role-aware access control
-- Activity logs and in-app notifications
-- REST API built with Django REST Framework
-- OpenAPI schema generation with `drf-spectacular`
-- React + TypeScript single-page frontend
-- PostgreSQL development database via Docker Compose
+### Authentication and Accounts
 
-## Tech stack
+- User registration and JWT-based authentication.
+- Email verification for newly registered accounts.
+- Password reset through email.
+- Protected API endpoints.
 
-**Backend:** Python, Django, Django REST Framework, Simple JWT, django-filter, drf-spectacular
-**Frontend:** React, TypeScript, Vite, Axios, React Router
-**Database:** PostgreSQL
-**Development / tooling:** Docker Compose, Git, GitHub Actions (CI setup planned)
+### Teams and Projects
 
-## Project structure
+- Create and manage teams.
+- Manage team membership and roles.
+- Create projects within teams.
+- Manage project membership.
+- Support project join-request workflows.
+- Restrict access according to team and project permissions.
+
+### Tasks and Collaboration
+
+- Create, update, and manage project tasks.
+- Apply role-aware access control to task operations.
+- Record activity logs for relevant actions.
+- Provide in-app notifications.
+
+### API and Quality
+
+- REST API built with Django REST Framework.
+- JWT authentication using Simple JWT.
+- API schema generation and validation with `drf-spectacular`.
+- Automated Django tests.
+- Automated frontend production builds through GitHub Actions.
+
+## Technology Stack
+
+| Area | Technologies |
+|---|---|
+| Backend | Python, Django, Django REST Framework |
+| Authentication | Simple JWT |
+| API documentation | drf-spectacular, OpenAPI |
+| Filtering | django-filter |
+| Database | PostgreSQL |
+| Frontend | React, TypeScript, Vite |
+| API integration | Axios |
+| Routing | React Router |
+| Static files | WhiteNoise |
+| Email delivery | SendGrid API |
+| Development database | Docker Compose |
+| Deployment | Render, Neon |
+| CI | GitHub Actions |
+
+## Project Structure
 
 ```text
 TeamFlow/
 ├── apps/
-│   ├── accounts/
-│   ├── activity/
-│   ├── notifications/
-│   ├── projects/
-│   ├── tasks/
-│   └── teams/
-├── config/                 # Django settings and URL configuration
-├── frontend/               # React + TypeScript application
-├── docker-compose.yml      # PostgreSQL development service
-├── requirements.txt        # Python dependencies
-├── schema.yml              # Generated OpenAPI schema
+│   ├── accounts/        # User accounts and authentication
+│   ├── activity/        # Activity log functionality
+│   ├── notifications/   # In-app notifications
+│   ├── projects/        # Projects and project membership
+│   ├── tasks/           # Task management
+│   └── teams/           # Teams and team membership
+├── config/              # Django settings, URLs, and WSGI
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── lib/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   └── types/
+│   ├── package.json
+│   └── vite.config.ts
+├── .github/
+│   └── workflows/
+│       └── ci.yml       # Continuous integration workflow
+├── docker-compose.yml
+├── requirements.txt
+├── schema.yml           # Generated OpenAPI schema
 └── manage.py
 ```
 
 ## Requirements
 
-- Python 3.12 or newer
-- Node.js and npm
+- Python 3.14 (used in the current CI configuration)
+- Node.js 24 and npm
 - Docker Desktop with Docker Compose
+- Git
 
-The commands below use Windows PowerShell. Run backend and frontend commands in separate terminal windows when both servers need to stay running.
+The setup commands below use Windows PowerShell.
 
-## Local setup
+## Local Development
 
 ### 1. Clone the repository
 
@@ -57,7 +112,7 @@ git clone https://github.com/Alosh9933-collaps/TeamFlow.git
 cd TeamFlow
 ```
 
-### 2. Create the Python environment
+### 2. Create and activate the Python environment
 
 ```powershell
 python -m venv venv
@@ -68,16 +123,16 @@ pip install -r requirements.txt
 
 ### 3. Configure environment variables
 
-Create your local `.env` file from the example:
+Create your local environment file:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Edit `.env` and fill in local development values. For example:
+Edit `.env` and configure local development values. For example:
 
 ```dotenv
-SECRET_KEY=replace-with-a-locally-generated-secret
+SECRET_KEY=replace-with-a-strong-local-secret
 DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
 
@@ -86,34 +141,48 @@ DB_USER=teamflow
 DB_PASSWORD=replace-with-a-local-database-password
 DB_HOST=127.0.0.1
 DB_PORT=5433
+DB_SSLMODE=prefer
+
+FRONTEND_URL=http://127.0.0.1:5173
+EMAIL_PROVIDER=console
+SENDGRID_API_KEY=
+DEFAULT_FROM_EMAIL=
 ```
 
-Use the same database name, username, and password expected by `docker-compose.yml`. Do not commit `.env` or put real secrets in `.env.example`.
+Use values compatible with the database configuration in `docker-compose.yml`. Keep real credentials and API keys in your local `.env` file or deployment environment variables. Never commit secrets.
 
-### 4. Start PostgreSQL and prepare Django
+### 4. Start PostgreSQL and apply migrations
 
 ```powershell
 docker compose up -d
 python manage.py migrate
 ```
 
-Optional: create an administrator account for Django Admin:
+Optionally, create an administrator for Django Admin:
 
 ```powershell
 python manage.py createsuperuser
 ```
 
-### 5. Run the backend
+### 5. Start the backend
+
+From the repository root:
 
 ```powershell
 python manage.py runserver 127.0.0.1:8000
 ```
 
-The backend API is served at `http://127.0.0.1:8000/`. The JWT token endpoint is `http://127.0.0.1:8000/api/auth/token/`.
+The local API is available at:
 
-### 6. Run the frontend
+`http://127.0.0.1:8000/`
 
-Open a second PowerShell window and run:
+The JWT token endpoint is:
+
+`http://127.0.0.1:8000/api/auth/token/`
+
+### 6. Start the frontend
+
+Open a second PowerShell terminal. From the repository root, configure the frontend environment and start Vite:
 
 ```powershell
 Copy-Item frontend/.env.example frontend/.env
@@ -122,36 +191,86 @@ npm ci
 npm run dev -- --host 127.0.0.1
 ```
 
-Open `http://127.0.0.1:5173/` in your browser. The frontend API base URL is configured with `VITE_API_BASE_URL` in `frontend/.env`.
+Open:
 
-## Tests and API schema
+`http://127.0.0.1:5173/`
 
-Run the Django test suite from the repository root with the virtual environment activated:
+The frontend API URL is configured through `VITE_API_BASE_URL` in `frontend/.env`.
+
+## Tests and API Schema
+
+### Run Django tests
+
+From the repository root with the Python environment activated:
 
 ```powershell
+python manage.py check
 python manage.py test
 ```
 
-Validate and regenerate the OpenAPI schema with:
+### Generate and validate the OpenAPI schema
 
 ```powershell
 python manage.py spectacular --file schema.yml --validate
 ```
 
-Build the frontend for production with:
+### Build the frontend
+
+From the frontend directory:
 
 ```powershell
-cd frontend
 npm ci
 npm run build
 ```
 
-## Environment and security notes
+## Continuous Integration
 
-- `.env` files, Python virtual environments, `node_modules`, and build output are excluded by `.gitignore`.
-- The `.env.example` files contain configuration templates only; replace placeholders in your own local `.env` files.
-- Before production deployment, configure a strong secret key, `DEBUG=False`, production `ALLOWED_HOSTS`, secure HTTPS settings, and production-grade database credentials.
+The GitHub Actions workflow in `.github/workflows/ci.yml` runs automatically on pushes and pull requests targeting `main`.
 
-## Current project status
+It includes two jobs:
 
-The backend modules, frontend pages, authentication flow, API integration, and automated backend tests have been developed and tested locally. Production deployment and continuous integration are separate follow-up steps.
+- **Backend Tests:** prepares PostgreSQL, installs Python dependencies, checks Django configuration, and runs the Django test suite.
+- **Frontend Build:** installs Node.js dependencies and builds the React application.
+
+The CI badge at the top of this README links to the workflow results.
+
+## Deployment
+
+The production application uses:
+
+- **Render** for the Django backend.
+- **Render Static Site** for the React frontend.
+- **Neon** for PostgreSQL.
+- **SendGrid API** for transactional email.
+
+Production configuration is supplied through environment variables rather than committed credentials.
+
+Important production settings include:
+
+- `SECRET_KEY`
+- `DEBUG=False`
+- `ALLOWED_HOSTS`
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, and `DB_PORT`
+- `DB_SSLMODE=require`
+- `FRONTEND_URL`
+- `CORS_ALLOWED_ORIGINS`
+- `EMAIL_PROVIDER`
+- `SENDGRID_API_KEY`
+- `DEFAULT_FROM_EMAIL`
+
+Do not put production credentials in source files or commit them to GitHub.
+
+## Security
+
+- Authentication is handled through JWTs.
+- API permissions enforce role-aware access to teams, projects, and tasks.
+- Access to other users' projects and tasks is restricted by backend authorization.
+- Production uses HTTPS-related Django security settings.
+- Secrets are configured through environment variables.
+- Automated tests help prevent authorization regressions.
+
+## Project Status
+
+TeamFlow is deployed and accessible online. The project includes a Django REST API, a React frontend, a PostgreSQL database, email-based account workflows, role-aware permissions, automated backend tests, and a GitHub Actions CI workflow.
+
+The project is intended as a portfolio demonstration of backend API development, relational database integration, authentication, authorization, automated testing, and deployment.
