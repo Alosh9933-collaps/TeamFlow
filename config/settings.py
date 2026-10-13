@@ -242,17 +242,21 @@ LOGGING = {
     },
 }
 
+# HTTPS redirect can be overridden per environment.
+SECURE_SSL_REDIRECT = os.getenv(
+    "SECURE_SSL_REDIRECT",
+    "False" if DEBUG else "True",
+).strip().lower() in {"1", "true", "yes", "on"}
+
+
 # Production security settings
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-
     # Render terminates HTTPS at its proxy.
     SECURE_PROXY_SSL_HEADER = (
         "HTTP_X_FORWARDED_PROTO",
         "https",
     )
 
-    # Start with a short HSTS duration and increase after verification.
     SECURE_HSTS_SECONDS = 3600
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = False
@@ -262,7 +266,6 @@ if not DEBUG:
 
 else:
     # Keep local HTTP development working.
-    SECURE_SSL_REDIRECT = False
     SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_HSTS_PRELOAD = False
