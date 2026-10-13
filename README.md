@@ -45,6 +45,22 @@ The frontend and backend are deployed on Render, with PostgreSQL hosted on Neon.
 - Automated Django tests.
 - Automated frontend production builds through GitHub Actions.
 
+
+## Screenshots
+
+### Dashboard
+
+![TeamFlow Dashboard](docs/screenshots/dashboard.png)
+
+### Team Members and Roles
+
+![Team Members and Roles](docs/screenshots/team-members.png)
+
+### Project Details and Tasks
+
+![Project Details and Tasks](docs/screenshots/project-tasks.png)
+
+
 ## Technology Stack
 
 | Area | Technologies |
