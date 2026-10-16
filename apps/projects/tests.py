@@ -1,7 +1,10 @@
 from unittest.mock import patch
 from rest_framework.test import APIClient
 from django.test import TestCase
+from django.test import SimpleTestCase
+from apps.projects.ai_planner import generate_task_suggestions
 
+from django.urls import reverse
 from apps.notifications.models import Notification
 from apps.activity.models import ActivityLog
 from apps.accounts.models import User
@@ -929,3 +932,164 @@ class ProjectMemberManagementTests(TestCase):
             response.status_code,
             403,
         )
+
+
+class AITaskPlannerTests(SimpleTestCase):
+
+    def test_returns_five_task_suggestions(self):
+        tasks = generate_task_suggestions(
+            description="Build a Django REST API"
+        )
+
+        self.assertEqual(len(tasks), 5)
+
+    def test_each_task_has_required_fields(self):
+        tasks = generate_task_suggestions(
+            description="Build a Django REST API"
+        )
+
+        for task in tasks:
+            with self.subTest(task=task["title"]):
+                self.assertIn("title", task)
+                self.assertIn("description", task)
+                self.assertIn("priority", task)
+
+    def test_description_is_included_in_first_task(self):
+        description = "Build a Django REST API"
+
+        tasks = generate_task_suggestions(
+            description=description
+        )
+
+        self.assertIn(description, tasks[0]["description"])
+
+    def test_empty_description_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            generate_task_suggestions(description="   ")
+
+
+
+class AITaskPlannerAPITests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+        self.user = User.objects.create_user(
+            username="planner_user",
+            password="password123",
+        )
+
+        self.member = User.objects.create_user(
+            username="planner_member",
+            password="password123",
+        )
+
+        self.outsider = User.objects.create_user(
+            username="outsider",
+            password="password123",
+        )
+
+        self.team = Team.objects.create(
+            name="Planner Team",
+        )
+
+        TeamMembership.objects.create(
+            user=self.member,
+            team=self.team,
+            role=TeamMembership.Role.MEMBER,
+        )
+
+        TeamMembership.objects.create(
+            user=self.user,
+            team=self.team,
+            role=TeamMembership.Role.OWNER,
+        )
+
+        self.project = Project.objects.create(
+            team=self.team,
+            name="Planner Project",
+            description="Build a Django REST API",
+            created_by=self.user,
+        )
+
+        ProjectMembership.objects.create(
+            user=self.user,
+            project=self.project,
+            role=ProjectMembership.Role.MANAGER,
+        )
+
+        ProjectMembership.objects.create(
+            user=self.member,
+            project=self.project,
+            role=ProjectMembership.Role.MEMBER,
+        )
+
+        self.client.force_authenticate(
+            user=self.user
+        )
+
+    def test_manager_can_generate_task_suggestions(self):
+        response = self.client.post(
+            f"/api/projects/{self.project.id}/ai-task-planner/",
+            {
+                "description": "Build a Django REST API",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(
+            response.data["project_id"],
+            self.project.id,
+        )
+
+        self.assertEqual(
+            len(response.data["suggestions"]),
+            5,
+        )
+
+    def test_empty_description_returns_400(self):
+        response = self.client.post(
+            f"/api/projects/{self.project.id}/ai-task-planner/",
+            {
+                "description": "   ",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    
+    def test_non_team_member_cannot_access_task_planner(self):
+        self.client.force_authenticate(
+            user=self.outsider
+        )
+
+        response = self.client.post(
+            f"/api/projects/{self.project.id}/ai-task-planner/",
+            {
+                "description": "Build a Django REST API",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+
+        
+    def test_project_member_can_generate_task_suggestions(self):
+        self.client.force_authenticate(
+            user=self.member
+        )
+
+        response = self.client.post(
+            f"/api/projects/{self.project.id}/ai-task-planner/",
+            {
+                "description": "Build a Django REST API",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data["suggestions"]), 5)

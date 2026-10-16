@@ -77,3 +77,16 @@ class IsProjectAllowedByRole(BasePermission):
             return True
 
         return project_role == ProjectMembership.Role.MANAGER
+
+
+class CanUseAITaskPlanner(BasePermission):
+    message = "You must be a project member to use the AI Task Planner."
+
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        return ProjectMembership.objects.filter(
+            user=request.user,
+            project=obj,
+        ).exists()
