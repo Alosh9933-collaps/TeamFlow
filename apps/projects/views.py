@@ -1,6 +1,9 @@
 
 from django.shortcuts import get_object_or_404
 from django.db.models import Exists, OuterRef
+from apps.projects.ai_planner import generate_task_suggestions
+
+
 
 from rest_framework import status, viewsets, serializers
 from rest_framework.permissions import IsAuthenticated
@@ -13,7 +16,10 @@ from drf_spectacular.utils import (
     inline_serializer,
 )
 
-from apps.projects.permissions import IsProjectAllowedByRole
+from apps.projects.permissions import (
+    IsProjectAllowedByRole,
+    CanUseAITaskPlanner,
+)
 from apps.projects.models import (Project,
     ProjectJoinRequest,
 )
@@ -167,6 +173,50 @@ class ProjectViewSet(viewsets.ModelViewSet):
             serializer.data,
             status=status.HTTP_200_OK,
         )
+
+    
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="ai-task-planner",
+        permission_classes=[
+            IsAuthenticated,
+            CanUseAITaskPlanner,
+        ],
+    )
+    def ai_task_planner(self, request, pk=None):
+        project = self.get_object()
+
+        description = (
+            request.data.get("description")
+            or project.description
+        )
+
+        if not isinstance(description, str) or not description.strip():
+            return Response(
+                {"detail": "A non-empty description is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            tasks = generate_task_suggestions(
+                description=description
+            )
+        except ValueError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "project_id": project.id,
+                "project_name": project.name,
+                "suggestions": tasks,
+            },
+            status=status.HTTP_200_OK,
+        )
+
 
     @members.mapping.post
     def add_member(self, request, pk=None):
