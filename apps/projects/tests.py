@@ -1,8 +1,11 @@
 from unittest.mock import patch
 from rest_framework.test import APIClient
-from django.test import TestCase
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase, override_settings
+
 from apps.projects.ai_planner import generate_task_suggestions
+
+import json
+from unittest.mock import patch
 
 from django.urls import reverse
 from apps.notifications.models import Notification
@@ -933,8 +936,27 @@ class ProjectMemberManagementTests(TestCase):
             403,
         )
 
-
+@override_settings(LLM_API_KEY="test-key")
 class AITaskPlannerTests(SimpleTestCase):
+    
+    def setUp(self):
+        patcher = patch("apps.projects.ai_planner.OpenAI")
+        self.mock_openai = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        suggestions = [
+            {
+                "title": f"Task {i}",
+                "description": (
+                    "Identify requirements for: Build a Django REST API"
+                ),
+                "priority": "medium",
+            }
+            for i in range(1, 6)
+        ]
+        self.mock_openai.return_value.responses.create.return_value.output_text = (
+            json.dumps({"suggestions": suggestions})
+        )
 
     def test_returns_five_task_suggestions(self):
         tasks = generate_task_suggestions(
@@ -968,11 +990,27 @@ class AITaskPlannerTests(SimpleTestCase):
             generate_task_suggestions(description="   ")
 
 
-
+@override_settings(LLM_API_KEY="test-key")
 class AITaskPlannerAPITests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
+        patcher = patch("apps.projects.ai_planner.OpenAI")
+        self.mock_openai = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        suggestions = [
+            {
+                "title": f"Task {i}",
+                "description": "A generated task description",
+                "priority": "medium",
+            }
+            for i in range(1, 6)
+        ]
+
+        self.mock_openai.return_value.responses.create.return_value.output_text = (
+            json.dumps({"suggestions": suggestions})
+        )
 
         self.user = User.objects.create_user(
             username="planner_user",
@@ -1061,6 +1099,27 @@ class AITaskPlannerAPITests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     
+    @patch("apps.projects.views.generate_task_suggestions")
+    def test_ai_service_failure_returns_502(self, mock_generate):
+        mock_generate.side_effect = RuntimeError(
+            "The AI service request failed."
+        )
+
+        response = self.client.post(
+            f"/api/projects/{self.project.id}/ai-task-planner/",
+            {
+                "description": "Build a Django REST API",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(
+            response.data["detail"],
+            "The AI service is temporarily unavailable.",
+        )
+
+
     def test_non_team_member_cannot_access_task_planner(self):
         self.client.force_authenticate(
             user=self.outsider

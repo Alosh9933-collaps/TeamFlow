@@ -197,15 +197,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 {"detail": "A non-empty description is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
         try:
-            tasks = generate_task_suggestions(
-                description=description
-            )
+            tasks = generate_task_suggestions(description=description)
+
         except ValueError as exc:
             return Response(
                 {"detail": str(exc)},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except RuntimeError:
+            return Response(
+                {"detail": "The AI service is temporarily unavailable."},
+                status=status.HTTP_502_BAD_GATEWAY,
             )
 
         return Response(
