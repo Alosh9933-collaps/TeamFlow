@@ -14,6 +14,7 @@ type TeamRole = 'OWNER' | 'ADMIN' | 'MEMBER';
 type ProjectRole = 'MANAGER' | 'MEMBER' | 'VIEWER';
 type TeamMember = { id: number; user: number; username: string; team: number; role: TeamRole; joined_at?: string };
 type ProjectMember = { id: number; user: number; username: string; project: number; role: ProjectRole; joined_at?: string };
+type AITaskSuggestion = { title: string; description: string; priority: 'high' | 'medium' | 'low' };
 
 export default function ProjectDetailPage() {
   const { user } = useAuth();
@@ -32,6 +33,10 @@ export default function ProjectDetailPage() {
   const [memberUsername, setMemberUsername] = useState('');
   const [memberRole, setMemberRole] = useState<'MEMBER' | 'VIEWER'>('MEMBER');
   const [memberSaving, setMemberSaving] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<AITaskSuggestion[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [aiSuccess, setAiSuccess] = useState('');
 
   const load = useCallback(async () => {
     if (!Number.isFinite(projectId) || projectId <= 0) { setError('Invalid project ID.'); setLoading(false); return; }
@@ -74,6 +79,29 @@ export default function ProjectDetailPage() {
   const myProjectRole = members.find((member) => member.user === user?.id)?.role;
   const myTeamRole = teamMembers.find((member) => member.user === user?.id)?.role;
   const canManageMembers = myProjectRole === 'MANAGER' || myTeamRole === 'OWNER' || myTeamRole === 'ADMIN';
+
+  async function handleGenerateAITasks() {
+    if (!project) return;
+    setAiLoading(true);
+    setAiError('');
+    setAiSuccess('');
+    setAiSuggestions([]);
+    try {
+      const response = await api.post<{
+        project_id: number;
+        project_name: string;
+        suggestions: AITaskSuggestion[];
+      }>(ENDPOINTS.aiTaskPlanner(projectId), {
+        description: project.description?.trim() || '',
+      });
+      setAiSuggestions(response.data.suggestions);
+      setAiSuccess(`Generated ${response.data.suggestions.length} suggestions. Review them below before creating tasks.`);
+    } catch (caught) {
+      setAiError(getErrorMessage(caught, 'Could not generate task suggestions. Please try again.'));
+    } finally {
+      setAiLoading(false);
+    }
+  }
 
   async function handleAddMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -124,6 +152,43 @@ export default function ProjectDetailPage() {
     {error && <Notice message={error} />}
     {loading ? <div className="mt-5 rounded-2xl border border-slate-800 p-8 text-sm text-slate-500">Loading project…</div> : project ? <>
       <PageHeader title={project.name} description={project.description || 'Project workspace'} action={<Link to="/tasks" className="rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-200">Go to tasks ↗</Link>} />
+      <section className="mb-6 rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/10 via-slate-900/70 to-slate-900/50 p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-200">
+              <span aria-hidden="true">✦</span> AI POWERED
+            </div>
+            <h2 className="text-lg font-semibold text-white">AI Task Planner</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-400">Turn this project's description into five actionable task suggestions with priorities. Review the suggestions before creating tasks.</p>
+          </div>
+          <button type="button" onClick={() => void handleGenerateAITasks()} disabled={aiLoading} className="shrink-0 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60">
+            {aiLoading ? 'Generating suggestions…' : aiSuggestions.length ? 'Generate again' : '✦ Generate tasks with AI'}
+          </button>
+        </div>
+        {!project.description?.trim() && <p className="mt-3 text-xs text-amber-200">This project has no description. Add a project description for more relevant suggestions.</p>}
+        {aiError && <div className="mt-4"><Notice message={aiError} /></div>}
+        {aiSuccess && <div className="mt-4"><Notice kind="success" message={aiSuccess} /></div>}
+        {aiSuggestions.length > 0 && <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {aiSuggestions.map((suggestion, index) => {
+            const priorityClass = suggestion.priority === 'high'
+              ? 'border-rose-400/20 bg-rose-400/10 text-rose-200'
+              : suggestion.priority === 'medium'
+                ? 'border-amber-300/20 bg-amber-300/10 text-amber-100'
+                : 'border-emerald-300/20 bg-emerald-300/10 text-emerald-200';
+            return <article key={`${index}-${suggestion.title}`} className="rounded-xl border border-slate-700/80 bg-slate-950/50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 gap-3">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-800 text-xs font-bold text-cyan-200">{String(index + 1).padStart(2, '0')}</span>
+                  <h3 className="pt-1 text-sm font-semibold text-slate-100">{suggestion.title}</h3>
+                </div>
+                <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold capitalize ${priorityClass}`}>{suggestion.priority}</span>
+              </div>
+              <p className="mt-3 pl-11 text-sm leading-6 text-slate-400">{suggestion.description}</p>
+            </article>;
+          })}
+        </div>}
+      </section>
+
       <div className="mb-6 grid gap-4 sm:grid-cols-3"><div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5"><p className="text-xs text-slate-500">Project ID</p><p className="mt-2 text-2xl font-bold text-white">#{project.id}</p></div><div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5"><p className="text-xs text-slate-500">Tasks</p><p className="mt-2 text-2xl font-bold text-white">{tasks.length}</p></div><div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5"><p className="text-xs text-slate-500">Created</p><p className="mt-2 text-2xl font-bold text-white">{formatDate(project.created_at)}</p></div></div>
 
       <section className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6">

@@ -18,4 +18,5 @@ export const ENDPOINTS = {
   notificationRead: (id: number) => `notifications/${id}/read/`,
   notificationReadAll: 'notifications/read-all/',
   projectActivity: (projectId: number) => `projects/${projectId}/activity/`,
+  aiTaskPlanner: (projectId: number) => `projects/${projectId}/ai-task-planner/`,
 } as const;
