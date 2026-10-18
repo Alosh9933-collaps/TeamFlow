@@ -1,7 +1,7 @@
 from unittest.mock import patch
 from rest_framework.test import APIClient
-from django.test import TestCase
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase, override_settings
+
 from apps.projects.ai_planner import generate_task_suggestions
 
 import json
@@ -936,8 +936,9 @@ class ProjectMemberManagementTests(TestCase):
             403,
         )
 
-
+@override_settings(LLM_API_KEY="test-key")
 class AITaskPlannerTests(SimpleTestCase):
+    
     def setUp(self):
         patcher = patch("apps.projects.ai_planner.OpenAI")
         self.mock_openai = patcher.start()
@@ -989,7 +990,7 @@ class AITaskPlannerTests(SimpleTestCase):
             generate_task_suggestions(description="   ")
 
 
-
+@override_settings(LLM_API_KEY="test-key")
 class AITaskPlannerAPITests(TestCase):
 
     def setUp(self):
